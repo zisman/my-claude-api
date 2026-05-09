@@ -152,6 +152,45 @@ export async function analyzeMarketingInsights(campaigns, leads, customers) {
   return jsonMatch ? JSON.parse(jsonMatch[0]) : { insights: [text] };
 }
 
+export async function generateSocialPost(topic, context) {
+  const prompt = `אתה מנהל מדיה חברתית מקצועי של מועדון מצנחי רחיפה בישראל. כתוב תוכן שיווקי אותנטי, מרגש ומזמין.
+
+נושא הפוסט: ${topic}
+
+מידע עדכני מהמועדון:
+${JSON.stringify(context, null, 2)}
+
+צור 3 גרסאות פוסט בפורמט JSON בלבד:
+{
+  "facebook": {
+    "content": "פוסט עשיר ומפורט לפייסבוק (3-4 משפטים) עם אמוג'י",
+    "hashtags": ["#מצנח_רחיפה", "#paragliding", "#ישראל"]
+  },
+  "instagram": {
+    "content": "פוסט קצר ואטרקטיבי לאינסטגרם (1-2 משפטים) עם אמוג'י",
+    "hashtags": ["#paragliding", "#parapente", "#fly", "#israel", "#freedom"]
+  },
+  "whatsapp": {
+    "content": "הודעה אישית וחמה לקבוצת וואטסאפ של החברים (2-3 משפטים)"
+  },
+  "image_suggestion": "תיאור מפורט של התמונה/וידאו המומלץ לפוסט",
+  "best_time": "זמן מומלץ לפרסום (שעה + הסבר קצר)",
+  "campaign_tip": "טיפ אחד לחיזוק ביצועי הפוסט"
+}`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-opus-4-7',
+    max_tokens: 2000,
+    thinking: { type: 'adaptive' },
+    system: [CLUB_SYSTEM_PROMPT],
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  const text = response.content.find(b => b.type === 'text')?.text || '{}';
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  return jsonMatch ? JSON.parse(jsonMatch[0]) : { facebook: { content: text } };
+}
+
 export async function* streamChat(messages) {
   const stream = anthropic.messages.stream({
     model: 'claude-opus-4-7',

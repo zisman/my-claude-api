@@ -15,6 +15,8 @@ import FlightRoutes from './pages/FlightRoutes.jsx';
 import Lessons from './pages/Lessons.jsx';
 import AIAssistant from './pages/AIAssistant.jsx';
 import Finance from './pages/Finance.jsx';
+import Growth from './pages/Growth.jsx';
+import Social from './pages/Social.jsx';
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="finance" element={<Finance />} />
+          <Route path="growth" element={<Growth />} />
+          <Route path="social" element={<Social />} />
           <Route path="marketing" element={<Marketing />} />
           <Route path="customers" element={<Customers />} />
           <Route path="students" element={<Students />} />

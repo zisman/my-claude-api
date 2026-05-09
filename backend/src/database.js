@@ -498,6 +498,71 @@ db.exec(`
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS social_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    content_facebook TEXT,
+    content_instagram TEXT,
+    content_whatsapp TEXT,
+    post_type TEXT DEFAULT 'general',
+    platforms TEXT DEFAULT 'facebook',
+    scheduled_at TEXT,
+    published_at TEXT,
+    status TEXT DEFAULT 'draft',
+    reference_type TEXT,
+    reference_id INTEGER,
+    image_suggestion TEXT,
+    hashtags TEXT,
+    ai_generated INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    reach INTEGER DEFAULT 0,
+    campaign_id INTEGER,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS social_campaigns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    objective TEXT DEFAULT 'awareness',
+    platform TEXT DEFAULT 'facebook',
+    budget REAL DEFAULT 0,
+    spent REAL DEFAULT 0,
+    start_date TEXT,
+    end_date TEXT,
+    status TEXT DEFAULT 'active',
+    leads_generated INTEGER DEFAULT 0,
+    conversions INTEGER DEFAULT 0,
+    impressions INTEGER DEFAULT 0,
+    clicks INTEGER DEFAULT 0,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS communication_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    channel TEXT DEFAULT 'whatsapp',
+    subject TEXT,
+    content TEXT NOT NULL,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS communications_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_name TEXT,
+    recipient_contact TEXT,
+    channel TEXT DEFAULT 'whatsapp',
+    template_id INTEGER REFERENCES communication_templates(id),
+    subject TEXT,
+    content TEXT,
+    status TEXT DEFAULT 'sent',
+    sent_at TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // Seed data
@@ -647,6 +712,23 @@ if (customerCount.c === 0) {
     ('2026-04-15', 600, 'admin', 'עלויות אתר + שיווק דיגיטלי', 'transfer', 'paid', 'INV-2026-006'),
     ('2026-05-01', 1200, 'site_rental', 'שכירת אתר כרמל - חצי שנה', 'check', 'pending', 'INV-2026-007'),
     ('2026-05-05', 350, 'fuel', 'דלק לנסיעות שטח - אפריל', 'cash', 'paid', NULL);
+
+    INSERT INTO social_campaigns (name, objective, platform, budget, spent, start_date, end_date, status, leads_generated, conversions, impressions, clicks) VALUES
+    ('קמפיין פתיחת עונה 2026', 'leads', 'facebook', 3000, 1400, '2026-04-01', '2026-05-31', 'active', 18, 5, 8400, 320),
+    ('קורס P1 - יולי 2026', 'conversions', 'instagram', 1500, 600, '2026-05-15', '2026-06-30', 'active', 12, 3, 4200, 180),
+    ('ימי פתוח', 'awareness', 'facebook', 800, 800, '2026-03-01', '2026-03-31', 'completed', 35, 8, 12000, 560);
+
+    INSERT INTO social_posts (title, content_facebook, content_instagram, content_whatsapp, post_type, platforms, status, published_at, likes, comments, shares, reach) VALUES
+    ('פתיחת עונת הקיץ!', 'חברים יקרים, עונת הקיץ כבר כאן! הגלבוע קורא לנו עם תנאי טיסה מושלמים. הצטרפו אלינו לאימונים הראשונים של העונה ותחוו טיסה בגבהים עם נוף עוצר נשימה!', 'עונת הקיץ כאן! 🪂☀️ הגלבוע קורא לנו', 'חברים, עונת הקיץ נפתחת! מי מגיע לאימון ראשון?', 'event', 'facebook,instagram,whatsapp', 'published', '2026-05-01', 47, 12, 8, 1240),
+    ('קורס P1 חדש - נרשמים!', 'פותחים קורס P1 חדש ביולי! המקומות מוגבלים - 6 תלמידים בלבד. הקורס כולל 40 שעות הדרכה, ציוד מלא ולוויה אישית של המדריכים הטובים שלנו.', 'קורס P1 חדש! 🎓 6 מקומות בלבד. הצטרפו עכשיו!', 'קורס P1 ביולי - עדיין יש מקומות! דברו איתנו 📱', 'promo', 'facebook,instagram', 'published', '2026-05-03', 23, 6, 4, 890),
+    ('יום טיסה מושלם', 'אמש היו תנאי טיסה מדהימים על הגלבוע! רוח יציבה מהצפון 18 קמ"ש ותרמיקה נהדרת. חברי המועדון עפו עד 3 שעות ברציפות. מחפשים אנשים לשתף את הקסם הזה!', 'יום טיסה מושלם! 🌤️ הגלבוע בשיא יופיו', 'אמש הגלבוע היה ממש מדהים - מי היה שם?! 🪂', 'general', 'facebook,instagram,whatsapp', 'draft', NULL, 0, 0, 0, 0);
+
+    INSERT INTO communication_templates (name, type, channel, subject, content) VALUES
+    ('יום הולדת שמח', 'birthday', 'whatsapp', NULL, 'שלום {name}! 🎂 כל המועדון מאחל לך יום הולדת שמח! מגיע לך עוף חינם - פנו אלינו לקביעת תאריך. יאללה לעוף! 🪂'),
+    ('תזכורת חידוש חברות', 'reminder', 'whatsapp', NULL, 'שלום {name}, החברות שלך במועדון פגה בקרוב. חדש עכשיו וקבל {discount}% הנחה על הקורס הבא!'),
+    ('הזמנה לאירוע', 'event', 'whatsapp', NULL, 'שלום {name}! 🎉 אנחנו שמחים להזמין אותך ל{event_name} שיתקיים ב{event_date}. הכניסה: {price}. מוזמן להירשם!'),
+    ('ברוך הבא למועדון', 'welcome', 'whatsapp', NULL, 'ברוך הבא {name}! 🪂 שמחים שהצטרפת למשפחת מועדון מצנחי רחיפה. המדריך {instructor} יצור איתך קשר בקרוב לתיאום האימון הראשון.'),
+    ('הזדמנות שדרוג קורס', 'upsell', 'whatsapp', NULL, 'שלום {name}! 🌟 כל הכבוד על סיום קורס {course}! הגיע הזמן לשלב הבא - קורס {next_course} מתחיל בקרוב. רוצה לשמוע עוד?');
 
     INSERT INTO member_dues (year, member_type, member_id, member_name, member_phone, amount_due, amount_paid, due_date, status) VALUES
     (2026, 'member', 1, 'יוסי כהן', '050-1234567', 800, 800, '2026-01-31', 'paid'),

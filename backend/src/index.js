@@ -15,6 +15,8 @@ import lessonsRouter from './routes/lessons.js';
 import aiRouter from './routes/ai.js';
 import alertsRouter from './routes/alerts.js';
 import financeRouter from './routes/finance.js';
+import growthRouter from './routes/growth.js';
+import socialRouter from './routes/social.js';
 import db from './database.js';
 import { startScheduler } from './services/scheduler.js';
 
@@ -38,6 +40,8 @@ app.use('/api/lessons', lessonsRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/finance', financeRouter);
+app.use('/api/growth', growthRouter);
+app.use('/api/social', socialRouter);
 
 app.get('/api/dashboard', (req, res) => {
   const stats = {
