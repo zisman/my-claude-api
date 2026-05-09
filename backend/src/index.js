@@ -13,7 +13,9 @@ import communityRouter from './routes/community.js';
 import flightRoutesRouter from './routes/flightroutes.js';
 import lessonsRouter from './routes/lessons.js';
 import aiRouter from './routes/ai.js';
+import alertsRouter from './routes/alerts.js';
 import db from './database.js';
+import { startScheduler } from './services/scheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +35,7 @@ app.use('/api/community', communityRouter);
 app.use('/api/routes', flightRoutesRouter);
 app.use('/api/lessons', lessonsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/alerts', alertsRouter);
 
 app.get('/api/dashboard', (req, res) => {
   const stats = {
@@ -59,4 +62,5 @@ app.get('/api/dashboard', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`מועדון מצנחי רחיפה - שרת פעיל על פורט ${PORT}`);
+  startScheduler();
 });

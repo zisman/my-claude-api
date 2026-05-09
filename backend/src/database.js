@@ -89,6 +89,7 @@ db.exec(`
     instructor TEXT,
     status TEXT DEFAULT 'active',
     medical_clearance INTEGER DEFAULT 0,
+    medical_expiry TEXT,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
@@ -131,6 +132,7 @@ db.exec(`
     status TEXT DEFAULT 'pending',
     payment_status TEXT DEFAULT 'unpaid',
     waiver_signed INTEGER DEFAULT 0,
+    waiver_signed_at TEXT,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
@@ -195,42 +197,113 @@ db.exec(`
     brand TEXT,
     model TEXT,
     serial_number TEXT UNIQUE,
+    manufacture_year INTEGER,
+    color TEXT,
+    size TEXT,
+    weight_kg REAL,
+    min_pilot_weight REAL,
+    max_pilot_weight REAL,
     purchase_date TEXT,
     purchase_price REAL,
+    supplier_id INTEGER REFERENCES suppliers(id),
+    warranty_expiry TEXT,
     owner_type TEXT DEFAULT 'club',
     owner_id INTEGER,
     owner_name TEXT,
     status TEXT DEFAULT 'active',
     condition TEXT DEFAULT 'good',
+    location TEXT DEFAULT 'מחסן',
     total_flights INTEGER DEFAULT 0,
     total_hours REAL DEFAULT 0,
+    max_flights INTEGER,
+    max_years INTEGER,
+    insured INTEGER DEFAULT 0,
+    insurance_value REAL,
+    insurance_expiry TEXT,
     last_inspection TEXT,
     next_inspection TEXT,
+    inspection_interval_months INTEGER DEFAULT 12,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
 
-  CREATE TABLE IF NOT EXISTS equipment_assignments (
+  CREATE TABLE IF NOT EXISTS equipment_inspections (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     equipment_id INTEGER NOT NULL REFERENCES equipment(id),
-    assigned_to INTEGER REFERENCES students(id),
-    assigned_name TEXT,
-    assigned_date TEXT DEFAULT (date('now')),
-    returned_date TEXT,
-    status TEXT DEFAULT 'active',
-    notes TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS equipment_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    equipment_id INTEGER NOT NULL REFERENCES equipment(id),
-    event_type TEXT NOT NULL,
-    description TEXT,
-    date TEXT DEFAULT (date('now')),
-    performed_by TEXT,
+    inspection_date TEXT NOT NULL,
+    inspection_type TEXT NOT NULL,
+    result TEXT DEFAULT 'passed',
+    findings TEXT,
+    inspector TEXT,
+    lab_name TEXT,
     cost REAL,
+    certificate_url TEXT,
+    next_due TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS equipment_repairs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    equipment_id INTEGER NOT NULL REFERENCES equipment(id),
+    report_date TEXT DEFAULT (date('now')),
+    description TEXT NOT NULL,
+    reported_by TEXT,
+    repaired_by TEXT,
+    repair_date TEXT,
+    cost REAL,
+    under_warranty INTEGER DEFAULT 0,
+    result TEXT,
+    back_in_service INTEGER DEFAULT 0,
     notes TEXT,
     created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS equipment_loans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    equipment_id INTEGER NOT NULL REFERENCES equipment(id),
+    borrower_type TEXT NOT NULL,
+    borrower_id INTEGER,
+    borrower_name TEXT NOT NULL,
+    borrower_phone TEXT,
+    loan_date TEXT DEFAULT (date('now')),
+    expected_return TEXT,
+    actual_return TEXT,
+    condition_out TEXT DEFAULT 'good',
+    condition_in TEXT,
+    approved_by TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS equipment_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    equipment_id INTEGER NOT NULL REFERENCES equipment(id),
+    image_type TEXT DEFAULT 'general',
+    file_path TEXT NOT NULL,
+    caption TEXT,
+    uploaded_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS alert_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    alert_type TEXT UNIQUE NOT NULL,
+    warning_days INTEGER DEFAULT 30,
+    urgent_days INTEGER DEFAULT 7,
+    email_enabled INTEGER DEFAULT 1,
+    whatsapp_enabled INTEGER DEFAULT 1,
+    active INTEGER DEFAULT 1
+  );
+
+  CREATE TABLE IF NOT EXISTS alert_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    alert_type TEXT NOT NULL,
+    equipment_id INTEGER REFERENCES equipment(id),
+    message TEXT,
+    channel TEXT,
+    sent_to TEXT,
+    status TEXT DEFAULT 'sent',
+    sent_at TEXT DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS maintenance_records (
@@ -400,12 +473,12 @@ if (customerCount.c === 0) {
     ('SIV - ניהול מצבי חירום', 'advanced', 'קורס ניהול תקלות ומצבי חירום', 20, 3500, 8, 'רמי דקל'),
     ('תיאוריה ומטאורולוגיה', 'beginner', 'תיאוריה של טיסה ומזג אוויר', 16, 800, 15, 'ליאת שמש');
 
-    INSERT INTO students (name, phone, email, current_level, instructor, status, medical_clearance) VALUES
-    ('אדם ישראלי', '050-1111111', 'adam@example.com', 'P1', 'יובל הר-לב', 'active', 1),
-    ('רינה כהן', '052-2222222', 'rina@example.com', 'P2', 'ליאת שמש', 'active', 1),
-    ('גיל פרץ', '054-3333333', 'gil@example.com', 'P1', 'יובל הר-לב', 'active', 1),
-    ('מאיה ברק', '053-4444444', 'maya@example.com', 'P2', 'ליאת שמש', 'active', 1),
-    ('עמי גולן', '058-5555555', 'ami@example.com', 'beginner', 'רמי דקל', 'active', 0);
+    INSERT INTO students (name, phone, email, current_level, instructor, status, medical_clearance, medical_expiry) VALUES
+    ('אדם ישראלי', '050-1111111', 'adam@example.com', 'P1', 'יובל הר-לב', 'active', 1, '2027-01-15'),
+    ('רינה כהן', '052-2222222', 'rina@example.com', 'P2', 'ליאת שמש', 'active', 1, '2026-08-20'),
+    ('גיל פרץ', '054-3333333', 'gil@example.com', 'P1', 'יובל הר-לב', 'active', 1, '2026-06-10'),
+    ('מאיה ברק', '053-4444444', 'maya@example.com', 'P2', 'ליאת שמש', 'active', 1, '2027-03-01'),
+    ('עמי גולן', '058-5555555', 'ami@example.com', 'beginner', 'רמי דקל', 'active', 0, NULL);
 
     INSERT INTO campaigns (name, type, budget, spent, status, leads_generated, conversions) VALUES
     ('קמפיין פייסבוק - קיץ', 'social_media', 3000, 1850, 'active', 24, 6),
@@ -426,17 +499,35 @@ if (customerCount.c === 0) {
     ('Sup Air', 'Pierre Dupont', '+33-456789012', 'contact@supair.com', 'ציוד בטיחות', 'France', 4),
     ('ציוד ספורט ישראל', 'דוד לוי', '03-5555555', 'david@sports.co.il', 'ציוד מקומי', 'Israel', 4);
 
-    INSERT INTO equipment (name, type, brand, model, serial_number, purchase_date, purchase_price, owner_type, condition, total_flights, total_hours) VALUES
-    ('כנף קלאב 1', 'wing', 'Ozone', 'Rush 6', 'OZ-R6-001', '2022-03-15', 8500, 'club', 'good', 234, 312),
-    ('כנף קלאב 2', 'wing', 'Advance', 'ALPHA 7', 'ADV-A7-002', '2021-08-20', 9200, 'club', 'good', 189, 251),
-    ('רתמה 1', 'harness', 'Sup Air', 'Altirando 4', 'SA-ALT4-001', '2022-01-10', 2800, 'club', 'excellent', 234, 312),
-    ('רתמה 2', 'harness', 'Advance', 'Lightness 3', 'ADV-L3-002', '2023-05-01', 3200, 'club', 'excellent', 189, 251),
-    ('מצנח חירום 1', 'reserve', 'Gin', 'Yeti 3', 'GIN-Y3-001', '2022-03-15', 1800, 'club', 'good', 0, 312),
-    ('רדיו 1', 'radio', 'Motorola', 'T82', 'MOT-T82-001', '2023-01-01', 350, 'club', 'good', 0, 0);
+    INSERT INTO equipment (name, type, brand, model, serial_number, manufacture_year, color, size, purchase_date, purchase_price, owner_type, condition, location, total_flights, total_hours, max_flights, max_years, last_inspection, next_inspection, inspection_interval_months, insured, insurance_value) VALUES
+    ('כנף קלאב 1', 'wing', 'Ozone', 'Rush 6', 'OZ-R6-001', 2022, 'כחול', 'M', '2022-03-15', 8500, 'club', 'good', 'מחסן', 234, 312, 500, 10, '2025-11-15', '2026-11-15', 12, 1, 6000),
+    ('כנף קלאב 2', 'wing', 'Advance', 'ALPHA 7', 'ADV-A7-002', 2021, 'אדום', 'S', '2021-08-20', 9200, 'club', 'good', 'מחסן', 189, 251, 500, 10, '2025-09-20', '2026-09-20', 12, 1, 7000),
+    ('רתמה 1', 'harness', 'Sup Air', 'Altirando 4', 'SA-ALT4-001', 2022, 'שחור', 'L', '2022-01-10', 2800, 'club', 'excellent', 'מחסן', 234, 312, NULL, 10, '2025-12-01', '2026-12-01', 12, 1, 2000),
+    ('רתמה 2', 'harness', 'Advance', 'Lightness 3', 'ADV-L3-002', 2023, 'אפור', 'M', '2023-05-01', 3200, 'club', 'excellent', 'מחסן', 189, 251, NULL, 10, '2025-10-15', '2026-05-20', 12, 1, 2500),
+    ('מצנח חירום 1', 'reserve', 'Gin', 'Yeti 3', 'GIN-Y3-001', 2022, 'כתום', 'M', '2022-03-15', 1800, 'club', 'good', 'מחסן', 0, 312, NULL, 10, '2025-10-05', '2026-05-15', 6, 1, 1500),
+    ('רדיו 1', 'radio', 'Motorola', 'T82', 'MOT-T82-001', 2023, 'שחור', NULL, '2023-01-01', 350, 'club', 'good', 'מחסן', 0, 0, NULL, 7, '2025-01-01', '2026-01-01', 12, 0, NULL);
 
-    INSERT INTO equipment (name, type, brand, model, serial_number, purchase_date, purchase_price, owner_type, owner_name, condition, total_flights, total_hours) VALUES
-    ('כנף תלמיד - אדם', 'wing', 'Nova', 'Mentor 7', 'NOV-M7-003', '2023-09-01', 7800, 'student', 'אדם ישראלי', 'good', 23, 31),
-    ('כנף חבר - יוסי', 'wing', 'Ozone', 'Rush 6 MS', 'OZ-R6S-004', '2021-12-01', 8800, 'member', 'יוסי כהן', 'good', 145, 193);
+    INSERT INTO equipment (name, type, brand, model, serial_number, manufacture_year, color, size, purchase_date, purchase_price, owner_type, owner_name, condition, location, total_flights, total_hours, max_flights, max_years, last_inspection, next_inspection, inspection_interval_months) VALUES
+    ('כנף תלמיד - אדם', 'wing', 'Nova', 'Mentor 7', 'NOV-M7-003', 2023, 'ירוק', 'S', '2023-09-01', 7800, 'student', 'אדם ישראלי', 'good', 'אצל תלמיד', 23, 31, 500, 10, '2025-08-01', '2026-08-01', 12),
+    ('כנף חבר - יוסי', 'wing', 'Ozone', 'Rush 6 MS', 'OZ-R6S-004', 2021, 'סגול', 'MS', '2021-12-01', 8800, 'member', 'יוסי כהן', 'good', 'אצל חבר', 145, 193, 500, 10, '2025-06-01', '2026-06-01', 12);
+
+    INSERT INTO equipment_inspections (equipment_id, inspection_date, inspection_type, result, findings, inspector, cost, next_due) VALUES
+    (1, '2025-11-15', 'שנתית מלאה', 'passed', 'ציוד במצב תקין. כמה קרעים קטנים תוקנו.', 'ריגינג ישראל', 450, '2026-11-15'),
+    (2, '2025-09-20', 'שנתית מלאה', 'passed', 'ציוד במצב טוב. נמצאו שחיקות קטנות בחגורות.', 'ריגינג ישראל', 420, '2026-09-20'),
+    (3, '2025-12-01', 'שנתית', 'passed', 'רתמה במצב מצוין.', 'יובל הר-לב', 200, '2026-12-01'),
+    (5, '2025-10-05', 'אריזה מחדש', 'passed', 'אורז מחדש כנדרש.', 'ריגינג ישראל', 180, '2026-04-05');
+
+    INSERT INTO equipment_repairs (equipment_id, report_date, description, reported_by, repaired_by, repair_date, cost, result, back_in_service) VALUES
+    (1, '2025-09-10', 'קרע קטן בפאנל 3', 'יובל הר-לב', 'ריגינג ישראל', '2025-09-15', 150, 'תוקן בהצלחה', 1),
+    (2, '2025-07-20', 'שחיקה בחגורת כתף ימין', 'אדם ישראלי', 'ריגינג ישראל', '2025-08-01', 280, 'הוחלפה חגורה', 1);
+
+    INSERT INTO alert_settings (alert_type, warning_days, urgent_days, email_enabled, whatsapp_enabled) VALUES
+    ('inspection_due', 30, 7, 1, 1),
+    ('reserve_repack', 30, 14, 1, 1),
+    ('insurance_expiry', 60, 14, 1, 1),
+    ('max_flights', 50, 20, 1, 1),
+    ('loan_overdue', 3, 1, 1, 1),
+    ('medical_expiry', 60, 14, 1, 0);
 
     INSERT INTO flight_routes (name, description, location, difficulty, distance_km, altitude_gain, max_altitude, conditions, best_season, rating, total_reviews) VALUES
     ('הגלבוע הצפוני', 'מסלול קלאסי לאורך רכס הגלבוע', 'הגלבוע', 'intermediate', 18.5, 650, 1050, 'רוח צפונית-מערבית 15-25 קמ"ש', 'אביב-סתיו', 4.5, 12),
@@ -462,9 +553,9 @@ if (customerCount.c === 0) {
     ('מועדון הרחיפה', 'הודעה חשובה - בדיקת ציוד שנתית', 'מזכירים לכל החברים - הגיע הזמן לבדיקה השנתית של הציוד. צרו קשר עם המדריכים לקביעת תור.', 'announcement', 0);
 
     INSERT INTO announcements (title, content, priority, author, expires_at) VALUES
-    ('עונת הקיץ נפתחת!', 'עונת הטיסות הקיצית מתחילה ב-1 ליוני. הצטרפו אלינו לאימונים הראשונים!', 'high', 'ועד המועדון', '2025-07-31'),
-    ('קורס P1 חדש - הרשמה פתוחה', 'פותחים קורס P1 חדש בחודש יולי. מקומות מוגבלים - הירשמו עוד היום!', 'normal', 'יובל הר-לב', '2025-06-30'),
-    ('תחזוקה תקופתית - מגרש המועדון', 'ביום שישי הקרוב יתקיים ניקיון ותחזוקה של מגרש המועדון. מוזמנים להצטרף ולעזור!', 'low', 'ועד המועדון', '2025-06-20');
+    ('עונת הקיץ נפתחת!', 'עונת הטיסות הקיצית מתחילה ב-1 ליוני. הצטרפו אלינו לאימונים הראשונים!', 'high', 'ועד המועדון', '2026-07-31'),
+    ('קורס P1 חדש - הרשמה פתוחה', 'פותחים קורס P1 חדש בחודש יולי. מקומות מוגבלים - הירשמו עוד היום!', 'normal', 'יובל הר-לב', '2026-06-30'),
+    ('תחזוקה תקופתית - מגרש המועדון', 'ביום שישי הקרוב יתקיים ניקיון ותחזוקה של מגרש המועדון. מוזמנים להצטרף ולעזור!', 'low', 'ועד המועדון', '2026-05-20');
 
     INSERT INTO lesson_modules (title, description, content, order_num, duration_minutes, level, course_id) VALUES
     ('מבוא לטיסת מצנח רחיפה', 'היסטוריה, עקרונות בסיסיים וציוד', 'תוכן השיעור: מבוא לספורט, סוגי כנפיים, ציוד בסיסי, בטיחות ראשונית...', 1, 45, 'beginner', 1),
@@ -478,12 +569,6 @@ if (customerCount.c === 0) {
     (1, 'מה הציוד הבסיסי הנדרש לטיסה?', '["כנף, רתמה, מצנח חירום","כנף בלבד","כנף ורתמה","כנף, רתמה, מצנח חירום, מכשיר GPS"]', 2, 'הציוד המינימלי כולל כנף, רתמה ומצנח חירום', 2),
     (2, 'מה זה תרמיקה?', '["עמוד אוויר עולה חם","רוח אנכית יורדת","עמוד אוויר קר","לחץ אוויר גבוה"]', 0, 'תרמיקה היא עמוד אוויר חם שעולה מהאדמה בשל חימום סולרי', 1),
     (3, 'כמה פעמים יש לבדוק את הציוד לפני טיסה?', '["פעם אחת","פעמיים","שלוש פעמים","כל עת שנדרש"]', 0, 'בדיקה מלאה אחת לפני כל טיסה היא המינימום הנדרש', 1);
-
-    INSERT INTO maintenance_records (equipment_id, type, description, performed_date, next_due, cost, technician, status) VALUES
-    (1, 'inspection', 'בדיקה שנתית מלאה של הכנף', '2024-11-15', '2025-11-15', 450, 'ריגינג ישראל', 'completed'),
-    (2, 'inspection', 'בדיקה שנתית מלאה של הכנף', '2024-09-20', '2025-09-20', 420, 'ריגינג ישראל', 'completed'),
-    (3, 'inspection', 'בדיקה שנתית של הרתמה', '2024-12-01', '2025-12-01', 200, 'יובל הר-לב', 'completed'),
-    (5, 'repack', 'אריזה מחדש של מצנח חירום', '2024-10-05', '2025-10-05', 180, 'ריגינג ישראל', 'completed');
   `);
 }
 
