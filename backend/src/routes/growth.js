@@ -116,30 +116,32 @@ router.get('/birthdays', (req, res) => {
   const days = parseInt(req.query.days) || 14;
 
   const membersBirthdays = db.prepare(`
-    SELECT id, name, phone, email, 'member' as type,
-      birth_date,
-      strftime('%m-%d', birth_date) as birthday_md,
-      CAST(
-        (julianday(strftime('%Y', 'now') || '-' || strftime('%m-%d', birth_date)) - julianday('now') +
-        CASE WHEN strftime('%m-%d', birth_date) < strftime('%m-%d', 'now') THEN 365 ELSE 0 END)
-      AS INTEGER) as days_until
-    FROM customers
-    WHERE birth_date IS NOT NULL AND status='active'
-    HAVING days_until BETWEEN 0 AND ?
+    SELECT * FROM (
+      SELECT id, name, phone, email, 'member' as type,
+        birth_date,
+        strftime('%m-%d', birth_date) as birthday_md,
+        CAST(
+          (julianday(strftime('%Y', 'now') || '-' || strftime('%m-%d', birth_date)) - julianday('now') +
+          CASE WHEN strftime('%m-%d', birth_date) < strftime('%m-%d', 'now') THEN 365 ELSE 0 END)
+        AS INTEGER) as days_until
+      FROM customers
+      WHERE birth_date IS NOT NULL AND status='active'
+    ) WHERE days_until BETWEEN 0 AND ?
     ORDER BY days_until
   `).all(days);
 
   const studentBirthdays = db.prepare(`
-    SELECT id, name, phone, email, 'student' as type,
-      birth_date,
-      strftime('%m-%d', birth_date) as birthday_md,
-      CAST(
-        (julianday(strftime('%Y', 'now') || '-' || strftime('%m-%d', birth_date)) - julianday('now') +
-        CASE WHEN strftime('%m-%d', birth_date) < strftime('%m-%d', 'now') THEN 365 ELSE 0 END)
-      AS INTEGER) as days_until
-    FROM students
-    WHERE birth_date IS NOT NULL AND status='active'
-    HAVING days_until BETWEEN 0 AND ?
+    SELECT * FROM (
+      SELECT id, name, phone, email, 'student' as type,
+        birth_date,
+        strftime('%m-%d', birth_date) as birthday_md,
+        CAST(
+          (julianday(strftime('%Y', 'now') || '-' || strftime('%m-%d', birth_date)) - julianday('now') +
+          CASE WHEN strftime('%m-%d', birth_date) < strftime('%m-%d', 'now') THEN 365 ELSE 0 END)
+        AS INTEGER) as days_until
+      FROM students
+      WHERE birth_date IS NOT NULL AND status='active'
+    ) WHERE days_until BETWEEN 0 AND ?
     ORDER BY days_until
   `).all(days);
 
