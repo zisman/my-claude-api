@@ -450,6 +450,54 @@ db.exec(`
     completed_at TEXT,
     UNIQUE(student_id, module_id)
   );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    payment_date TEXT DEFAULT (date('now')),
+    amount REAL NOT NULL,
+    payment_type TEXT NOT NULL,
+    payment_method TEXT DEFAULT 'cash',
+    payer_type TEXT,
+    payer_id INTEGER,
+    payer_name TEXT NOT NULL,
+    description TEXT,
+    reference_id INTEGER,
+    reference_type TEXT,
+    status TEXT DEFAULT 'paid',
+    receipt_number TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_date TEXT DEFAULT (date('now')),
+    amount REAL NOT NULL,
+    category TEXT NOT NULL,
+    supplier_id INTEGER REFERENCES suppliers(id),
+    description TEXT NOT NULL,
+    payment_method TEXT DEFAULT 'transfer',
+    status TEXT DEFAULT 'paid',
+    invoice_number TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS member_dues (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    year INTEGER NOT NULL,
+    member_type TEXT NOT NULL,
+    member_id INTEGER,
+    member_name TEXT NOT NULL,
+    member_phone TEXT,
+    amount_due REAL NOT NULL,
+    amount_paid REAL DEFAULT 0,
+    due_date TEXT,
+    status TEXT DEFAULT 'pending',
+    payment_id INTEGER REFERENCES payments(id),
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // Seed data
@@ -569,6 +617,51 @@ if (customerCount.c === 0) {
     (1, 'מה הציוד הבסיסי הנדרש לטיסה?', '["כנף, רתמה, מצנח חירום","כנף בלבד","כנף ורתמה","כנף, רתמה, מצנח חירום, מכשיר GPS"]', 2, 'הציוד המינימלי כולל כנף, רתמה ומצנח חירום', 2),
     (2, 'מה זה תרמיקה?', '["עמוד אוויר עולה חם","רוח אנכית יורדת","עמוד אוויר קר","לחץ אוויר גבוה"]', 0, 'תרמיקה היא עמוד אוויר חם שעולה מהאדמה בשל חימום סולרי', 1),
     (3, 'כמה פעמים יש לבדוק את הציוד לפני טיסה?', '["פעם אחת","פעמיים","שלוש פעמים","כל עת שנדרש"]', 0, 'בדיקה מלאה אחת לפני כל טיסה היא המינימום הנדרש', 1);
+
+    -- Finance tables seed data
+    INSERT INTO payments (payment_date, amount, payment_type, payment_method, payer_name, payer_type, description, status, receipt_number) VALUES
+    ('2026-01-10', 4500, 'course', 'transfer', 'אדם ישראלי', 'student', 'קורס P2 - כנפיים', 'paid', 'REC-001'),
+    ('2026-01-15', 2800, 'course', 'cash', 'רינה כהן', 'student', 'קורס P1', 'paid', 'REC-002'),
+    ('2026-02-01', 800, 'membership', 'transfer', 'יוסי כהן', 'member', 'דמי חבר 2026', 'paid', 'REC-003'),
+    ('2026-02-05', 800, 'membership', 'credit', 'מיכל לוי', 'member', 'דמי חבר 2026', 'paid', 'REC-004'),
+    ('2026-02-10', 800, 'membership', 'transfer', 'אבי מזרחי', 'member', 'דמי חבר 2026', 'paid', 'REC-005'),
+    ('2026-02-15', 350, 'flight', 'cash', 'טל שמיר', 'customer', 'טיסת חוויה - הגלבוע', 'paid', 'REC-006'),
+    ('2026-02-20', 300, 'flight', 'credit', 'ורד נוימן', 'customer', 'טיסת חוויה - כרמל', 'paid', 'REC-007'),
+    ('2026-03-01', 800, 'membership', 'app', 'דן ברגר', 'member', 'דמי חבר 2026', 'paid', 'REC-008'),
+    ('2026-03-10', 3500, 'course', 'transfer', 'גיל פרץ', 'student', 'קורס SIV', 'paid', 'REC-009'),
+    ('2026-03-15', 800, 'membership', 'cash', 'נועה שפירא', 'member', 'דמי חבר 2026', 'paid', 'REC-010'),
+    ('2026-04-01', 150, 'event', 'credit', 'רון כץ', 'member', 'טורניר פאן-ישראלי', 'paid', 'REC-011'),
+    ('2026-04-05', 150, 'event', 'cash', 'תמר בן-דוד', 'member', 'טורניר פאן-ישראלי', 'paid', 'REC-012'),
+    ('2026-04-10', 2800, 'course', 'transfer', 'עמי גולן', 'student', 'קורס P1', 'paid', 'REC-013'),
+    ('2026-05-01', 800, 'membership', 'transfer', 'רון כץ', 'member', 'דמי חבר 2026', 'paid', 'REC-014'),
+    ('2026-05-05', 350, 'flight', 'cash', 'אייל גרוס', 'customer', 'טיסת חוויה - הגלבוע', 'pending', 'REC-015');
+
+    INSERT INTO expenses (expense_date, amount, category, description, payment_method, status, invoice_number) VALUES
+    ('2026-01-05', 450, 'maintenance', 'בדיקה שנתית כנף קלאב 1', 'transfer', 'paid', 'INV-2026-001'),
+    ('2026-01-20', 420, 'maintenance', 'בדיקה שנתית כנף קלאב 2', 'transfer', 'paid', 'INV-2026-002'),
+    ('2026-02-01', 2400, 'insurance', 'ביטוח ציוד שנתי 2026', 'transfer', 'paid', 'INV-2026-003'),
+    ('2026-02-15', 1500, 'site_rental', 'שכירת אתר הגלבוע - חצי שנה', 'check', 'paid', 'INV-2026-004'),
+    ('2026-03-01', 280, 'maintenance', 'תיקון רתמה - החלפת חגורת כתף', 'cash', 'paid', NULL),
+    ('2026-03-10', 890, 'equipment', 'ציוד כביסה וניקוי כנפיים', 'credit', 'paid', 'INV-2026-005'),
+    ('2026-04-01', 180, 'maintenance', 'אריזה מחדש מצנח חירום', 'cash', 'paid', NULL),
+    ('2026-04-15', 600, 'admin', 'עלויות אתר + שיווק דיגיטלי', 'transfer', 'paid', 'INV-2026-006'),
+    ('2026-05-01', 1200, 'site_rental', 'שכירת אתר כרמל - חצי שנה', 'check', 'pending', 'INV-2026-007'),
+    ('2026-05-05', 350, 'fuel', 'דלק לנסיעות שטח - אפריל', 'cash', 'paid', NULL);
+
+    INSERT INTO member_dues (year, member_type, member_id, member_name, member_phone, amount_due, amount_paid, due_date, status) VALUES
+    (2026, 'member', 1, 'יוסי כהן', '050-1234567', 800, 800, '2026-01-31', 'paid'),
+    (2026, 'member', 2, 'מיכל לוי', '052-2345678', 800, 800, '2026-01-31', 'paid'),
+    (2026, 'member', 3, 'אבי מזרחי', '054-3456789', 800, 800, '2026-01-31', 'paid'),
+    (2026, 'member', 4, 'שרה דוד', '053-4567890', 800, 0, '2026-01-31', 'pending'),
+    (2026, 'member', 5, 'דן ברגר', '058-5678901', 800, 800, '2026-01-31', 'paid'),
+    (2026, 'member', 6, 'נועה שפירא', '050-6789012', 800, 800, '2026-01-31', 'paid'),
+    (2026, 'member', 7, 'רון כץ', '052-7890123', 800, 800, '2026-01-31', 'paid'),
+    (2026, 'member', 8, 'תמר בן-דוד', '054-8901234', 800, 0, '2026-01-31', 'pending'),
+    (2026, 'student', 1, 'אדם ישראלי', '050-1111111', 400, 400, '2026-01-31', 'paid'),
+    (2026, 'student', 2, 'רינה כהן', '052-2222222', 400, 200, '2026-01-31', 'partial'),
+    (2026, 'student', 3, 'גיל פרץ', '054-3333333', 400, 400, '2026-01-31', 'paid'),
+    (2026, 'student', 4, 'מאיה ברק', '053-4444444', 400, 0, '2026-01-31', 'pending'),
+    (2026, 'student', 5, 'עמי גולן', '058-5555555', 400, 0, '2026-01-31', 'pending');
   `);
 }
 

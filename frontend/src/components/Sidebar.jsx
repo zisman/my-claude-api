@@ -3,11 +3,12 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Megaphone, Users, GraduationCap, Wind,
   Package, Wrench, CloudSun, MessageCircle, Map, BookOpen,
-  Bot, ChevronRight, ChevronLeft, Truck
+  Bot, ChevronRight, ChevronLeft, Truck, DollarSign
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'לוח בקרה' },
+  { to: '/finance', icon: DollarSign, label: 'כספים' },
   { to: '/marketing', icon: Megaphone, label: 'שיווק ופרסום' },
   { to: '/customers', icon: Users, label: 'לקוחות' },
   { to: '/students', icon: GraduationCap, label: 'תלמידים' },

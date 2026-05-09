@@ -14,6 +14,7 @@ import Community from './pages/Community.jsx';
 import FlightRoutes from './pages/FlightRoutes.jsx';
 import Lessons from './pages/Lessons.jsx';
 import AIAssistant from './pages/AIAssistant.jsx';
+import Finance from './pages/Finance.jsx';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="finance" element={<Finance />} />
           <Route path="marketing" element={<Marketing />} />
           <Route path="customers" element={<Customers />} />
           <Route path="students" element={<Students />} />
