@@ -1,0 +1,400 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  domain    String?  @unique
+  currency  String   @default("ILS")
+  timezone  String   @default("Asia/Jerusalem")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  students         Student[]
+  equipment        EquipmentItem[]
+  courses          Course[]
+  sites            FlightSite[]
+  serviceOrders    ServiceOrder[]
+  weatherSnapshots WeatherSnapshot[]
+  leads            Lead[]
+  campaigns        Campaign[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  email     String
+  hashedPwd String
+  firstName String
+  lastName  String
+  phone     String?
+  role      Role     @default(VIEWER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instructorLessons Lesson[]       @relation("InstructorLessons")
+  serviceOrders     ServiceOrder[] @relation("TechnicianOrders")
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  TECHNICIAN
+  STUDENT
+  FINANCE
+  MARKETING
+  SUPPLIER
+  RECEPTION
+  VIEWER
+}
+
+model Student {
+  id               String        @id @default(cuid())
+  tenantId         String
+  tenant           Tenant        @relation(fields: [tenantId], references: [id])
+  userId           String?       @unique
+  firstName        String
+  lastName         String
+  email            String?
+  phone            String?
+  dateOfBirth      DateTime?
+  emergencyContact String?
+  medicalInfo      String?
+  licenseLevel     String?
+  licenseExpiry    DateTime?
+  status           StudentStatus @default(PROSPECT)
+  totalFlights     Int           @default(0)
+  totalHours       Float         @default(0)
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  enrollments Enrollment[]
+  flightLogs  FlightLog[]
+  attendances Attendance[]
+
+  @@index([tenantId])
+}
+
+enum StudentStatus {
+  PROSPECT
+  ACTIVE
+  PAUSED
+  GRADUATED
+  DROPPED
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  title       String
+  description String?
+  level       CourseLevel
+  priceCents  Int          @default(0)
+  maxStudents Int          @default(10)
+  startDate   DateTime
+  endDate     DateTime?
+  status      CourseStatus @default(DRAFT)
+  instructorId String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  lessons     Lesson[]
+  enrollments Enrollment[]
+
+  @@index([tenantId])
+}
+
+enum CourseLevel {
+  INTRO
+  BASIC
+  ADVANCED
+  PARAMOTOR
+  TRIKE
+}
+
+enum CourseStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Lesson {
+  id           String       @id @default(cuid())
+  courseId     String
+  course       Course       @relation(fields: [courseId], references: [id])
+  title        String
+  scheduledAt  DateTime
+  durationMins Int          @default(90)
+  siteId       String?
+  site         FlightSite?  @relation(fields: [siteId], references: [id])
+  instructorId String?
+  instructor   User?        @relation("InstructorLessons", fields: [instructorId], references: [id])
+  status       LessonStatus @default(SCHEDULED)
+  notes        String?
+  createdAt    DateTime     @default(now())
+
+  attendances Attendance[]
+}
+
+enum LessonStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  studentId   String
+  student     Student          @relation(fields: [studentId], references: [id])
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id])
+  tenantId    String
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
+  completedAt DateTime?
+  paidCents   Int              @default(0)
+
+  @@unique([studentId, courseId])
+  @@index([tenantId])
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  PAUSED
+}
+
+model Attendance {
+  id        String  @id @default(cuid())
+  lessonId  String
+  lesson    Lesson  @relation(fields: [lessonId], references: [id])
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+  present   Boolean @default(false)
+  notes     String?
+
+  @@unique([lessonId, studentId])
+}
+
+model FlightLog {
+  id          String      @id @default(cuid())
+  studentId   String
+  student     Student     @relation(fields: [studentId], references: [id])
+  date        DateTime
+  durationMin Int
+  siteId      String?
+  site        FlightSite? @relation(fields: [siteId], references: [id])
+  equipmentId String?
+  equipment   EquipmentItem? @relation(fields: [equipmentId], references: [id])
+  notes       String?
+  createdAt   DateTime    @default(now())
+}
+
+model EquipmentItem {
+  id               String          @id @default(cuid())
+  tenantId         String
+  tenant           Tenant          @relation(fields: [tenantId], references: [id])
+  type             EquipmentType
+  brand            String?
+  model            String?
+  serial           String?
+  ownerType        OwnerType       @default(CLUB)
+  ownerId          String?
+  status           EquipmentStatus @default(AVAILABLE)
+  purchaseDate     DateTime?
+  purchasePriceCents Int           @default(0)
+  lastService      DateTime?
+  nextRefresh      DateTime?
+  usageHours       Float           @default(0)
+  qrCode           String?         @unique
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  serviceOrders ServiceOrder[]
+  flightLogs    FlightLog[]
+
+  @@index([tenantId])
+}
+
+enum EquipmentType {
+  WING
+  HARNESS
+  RESERVE
+  HELMET
+  RADIO
+  ENGINE
+  TRIKE
+  OTHER
+}
+
+enum OwnerType {
+  CLUB
+  CUSTOMER
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  RENTED
+  IN_SERVICE
+  OUT_OF_SERVICE
+  SOLD
+}
+
+model ServiceOrder {
+  id           String        @id @default(cuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  equipmentId  String
+  equipment    EquipmentItem @relation(fields: [equipmentId], references: [id])
+  customerId   String?
+  technicianId String?
+  technician   User?         @relation("TechnicianOrders", fields: [technicianId], references: [id])
+  status       ServiceStatus @default(RECEIVED)
+  description  String?
+  diagnosis    String?
+  priceCents   Int           @default(0)
+  intakeAt     DateTime      @default(now())
+  approvedAt   DateTime?
+  completedAt  DateTime?
+  shippedAt    DateTime?
+  photos       String[]
+  notes        String?
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+enum ServiceStatus {
+  RECEIVED
+  DIAGNOSIS
+  WAITING_APPROVAL
+  APPROVED
+  IN_PROGRESS
+  WAITING_PARTS
+  QA
+  READY
+  INVOICED
+  SHIPPED
+  CLOSED
+}
+
+model FlightSite {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  lat       Float
+  lon       Float
+  altitudeM Int?
+  notes     String?
+
+  lessons          Lesson[]
+  flightLogs       FlightLog[]
+  weatherSnapshots WeatherSnapshot[]
+
+  @@index([tenantId])
+}
+
+model WeatherSnapshot {
+  id        String     @id @default(cuid())
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  siteId    String
+  site      FlightSite @relation(fields: [siteId], references: [id])
+  at        DateTime
+  windKmh   Float
+  gustKmh   Float
+  dirDeg    Int
+  tempC     Float?
+  cloudPct  Int?
+  isFlyable Boolean    @default(false)
+
+  @@unique([siteId, at])
+  @@index([tenantId])
+  @@index([siteId, at])
+}
+
+model Lead {
+  id        String       @id @default(cuid())
+  tenantId  String
+  tenant    Tenant       @relation(fields: [tenantId], references: [id])
+  firstName String
+  lastName  String
+  email     String?
+  phone     String
+  interest  LeadInterest @default(COURSE)
+  status    LeadStatus   @default(NEW)
+  score     Int          @default(0)
+  source    String?
+  notes     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([tenantId])
+}
+
+enum LeadInterest {
+  COURSE
+  JOY_FLIGHT
+  EVENT
+  EQUIPMENT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+model Campaign {
+  id             String         @id @default(cuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  name           String
+  type           CampaignType
+  status         CampaignStatus @default(DRAFT)
+  targetAudience String?
+  budget         Int            @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@index([tenantId])
+}
+
+enum CampaignType {
+  EMAIL
+  SMS
+  SOCIAL
+  EVENT
+  OTHER
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
