@@ -10,7 +10,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:push": "prisma db push",
-    "seed": "ts-node --project tsconfig.json -e \"require('ts-node/register'); require('./prisma/seed.ts')\""
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.3",
@@ -37,6 +37,10 @@
     "@types/passport-jwt": "^4.0.1",
     "prisma": "^5.11.0",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.4.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
