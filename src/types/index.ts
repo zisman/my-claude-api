@@ -20,7 +20,8 @@ export interface Organization {
   name: string
   slug: string
   logo_url: string | null
-  plan: 'starter' | 'growth' | 'enterprise'
+  plan: 'starter' | 'growth' | 'enterprise' | 'custom'
+  billing_status: 'active' | 'past_due' | 'cancelled' | 'trialing' | null
   settings: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -439,6 +440,7 @@ export interface CampaignFilters {
 }
 
 export interface AlertFilters {
+  organizationId?: string
   severity?: AlertSeverity[]
   status?: AlertStatus[]
   client_id?: string
@@ -446,6 +448,7 @@ export interface AlertFilters {
 }
 
 export interface TaskFilters {
+  organizationId?: string
   status?: TaskStatus[]
   priority?: TaskPriority[]
   assigned_to?: string

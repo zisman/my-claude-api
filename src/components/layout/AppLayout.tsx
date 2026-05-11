@@ -10,7 +10,7 @@ export function AppLayout() {
 
   const { data: alertCounts } = useQuery({
     queryKey: ['alertCounts', user?.organization_id],
-    queryFn: () => getAlertCounts(user!.organization_id),
+    queryFn: () => getAlertCounts(user?.organization_id ?? ''),
     enabled: !!user?.organization_id,
     staleTime: 30_000,
     refetchInterval: 60_000,

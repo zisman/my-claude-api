@@ -10,10 +10,11 @@ export async function getAlerts(filters?: AlertFilters): Promise<Alert[]> {
     .select(`*, client:clients(id, name), campaign:campaigns(id, name, platform)`)
     .order('created_at', { ascending: false })
 
-  if (filters?.status?.length) query = query.in('status', filters.status)
+  if (filters?.organizationId) query = query.eq('organization_id', filters.organizationId)
+  if (filters?.status?.length)   query = query.in('status', filters.status)
   if (filters?.severity?.length) query = query.in('severity', filters.severity)
-  if (filters?.client_id) query = query.eq('client_id', filters.client_id)
-  if (filters?.search) query = query.ilike('title', `%${filters.search}%`)
+  if (filters?.client_id)        query = query.eq('client_id', filters.client_id)
+  if (filters?.search)           query = query.ilike('title', `%${filters.search}%`)
 
   const { data, error } = await query
   if (error) throw error

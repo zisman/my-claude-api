@@ -58,7 +58,7 @@ export const UnifiedMetricSchema = z.object({
   impression_share: z.number().nonnegative().nullable().default(null), // percentage
 
   // Raw platform response preserved for debugging / future fields
-  platform_data: z.record(z.unknown()).default({}),
+  platform_data: z.record(z.string(), z.unknown()).default({}),
 })
 
 export type UnifiedMetric = z.infer<typeof UnifiedMetricSchema>

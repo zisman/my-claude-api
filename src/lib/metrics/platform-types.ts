@@ -195,7 +195,7 @@ export const DailyMetricRowSchema = z.object({
   roas:                   z.number().nullable(),
   quality_score:          z.number().nullable(),
   impression_share:       z.number().nullable(),
-  platform_data:          z.record(z.unknown()).default({}),
+  platform_data:          z.record(z.string(), z.unknown()).default({}),
   created_at:             z.string(),
   updated_at:             z.string(),
 })

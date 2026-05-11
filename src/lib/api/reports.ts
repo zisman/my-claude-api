@@ -4,11 +4,15 @@ import type { Report, CreateReportForm } from '@/types'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any
 
-export async function getReports(): Promise<Report[]> {
-  const { data, error } = await db
+export async function getReports(organizationId?: string): Promise<Report[]> {
+  let query = db
     .from('reports')
     .select(`*, client:clients(id, name), created_by_user:user_profiles!created_by(id, full_name, avatar_url)`)
     .order('created_at', { ascending: false })
+
+  if (organizationId) query = query.eq('organization_id', organizationId)
+
+  const { data, error } = await query
   if (error) throw error
   return (data ?? []) as Report[]
 }

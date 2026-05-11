@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from './AuthContext'
 import type { Organization } from '@/types'

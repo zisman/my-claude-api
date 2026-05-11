@@ -6,12 +6,20 @@ import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getReports, deleteReport } from '@/lib/api/reports'
+import { useAuth } from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
 import type { ReportStatus } from '@/types'
 
 export function ReportsPage() {
+  const { user } = useAuth()
   const qc = useQueryClient()
-  const { data: reports = [], isLoading } = useQuery({ queryKey: ['reports'], queryFn: getReports })
+  const orgId = user?.organization_id
+
+  const { data: reports = [], isLoading } = useQuery({
+    queryKey: ['reports', orgId],
+    queryFn: () => getReports(orgId),
+    enabled: !!orgId,
+  })
 
   const deleteMutation = useMutation({
     mutationFn: deleteReport,

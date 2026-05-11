@@ -16,8 +16,10 @@ export function useCreateClient() {
   const { user } = useAuth()
 
   return useMutation({
-    mutationFn: (form: CreateClientForm) =>
-      createClient({ ...form, organization_id: user!.organization_id }),
+    mutationFn: (form: CreateClientForm) => {
+      if (!user?.organization_id) throw new Error('Not authenticated')
+      return createClient({ ...form, organization_id: user.organization_id })
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
   })
 }

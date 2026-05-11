@@ -17,13 +17,19 @@ export function AlertsPage() {
   const qc = useQueryClient()
   const [activeStatus, setActiveStatus] = useState<AlertStatus | 'all'>('open')
 
+  const orgId = user?.organization_id
+
   const { data: alerts = [], isLoading } = useQuery({
-    queryKey: ['alerts', activeStatus],
-    queryFn: () => getAlerts(activeStatus === 'all' ? undefined : { status: [activeStatus] }),
+    queryKey: ['alerts', orgId, activeStatus],
+    queryFn: () => getAlerts({
+      organizationId: orgId,
+      ...(activeStatus !== 'all' && { status: [activeStatus] }),
+    }),
+    enabled: !!orgId,
   })
 
   const ackMutation = useMutation({
-    mutationFn: (id: string) => acknowledgeAlert(id, user!.id),
+    mutationFn: (id: string) => acknowledgeAlert(id, user?.id ?? ''),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
   })
   const resolveMutation = useMutation({

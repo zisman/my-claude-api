@@ -6,16 +6,24 @@ import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTasks, updateTask } from '@/lib/api/tasks'
+import { useAuth } from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
 import type { TaskStatus, TaskPriority } from '@/types'
 
 export function TasksPage() {
+  const { user } = useAuth()
   const qc = useQueryClient()
   const [activeStatus, setActiveStatus] = useState<TaskStatus | 'all'>('todo')
 
+  const orgId = user?.organization_id
+
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['tasks', activeStatus],
-    queryFn: () => getTasks(activeStatus === 'all' ? undefined : { status: [activeStatus] }),
+    queryKey: ['tasks', orgId, activeStatus],
+    queryFn: () => getTasks({
+      organizationId: orgId,
+      ...(activeStatus !== 'all' && { status: [activeStatus] }),
+    }),
+    enabled: !!orgId,
   })
 
   const updateMutation = useMutation({
