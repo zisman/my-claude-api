@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
+import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ClientsPage } from '@/pages/ClientsPage'
 import { ClientDetailPage } from '@/pages/ClientDetailPage'
@@ -15,6 +16,7 @@ import { SettingsPage } from '@/pages/SettingsPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/oauth/callback/:platform', element: <OAuthCallbackPage /> },
   {
     element: (
       <ProtectedRoute>
