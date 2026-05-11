@@ -10,14 +10,16 @@ const PLATFORM_CONFIG: Record<PlatformType, { label: string; color: string; bg: 
 
 interface PlatformBadgeProps {
   platform: PlatformType
+  size?: 'xs' | 'sm'
   className?: string
 }
 
-export function PlatformBadge({ platform, className }: PlatformBadgeProps) {
-  const config = PLATFORM_CONFIG[platform]
+export function PlatformBadge({ platform, size = 'sm', className }: PlatformBadgeProps) {
+  const config = PLATFORM_CONFIG[platform] ?? { label: platform, color: 'text-slate-600', bg: 'bg-slate-100' }
   return (
     <span className={cn(
-      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+      'inline-flex items-center rounded font-medium',
+      size === 'xs' ? 'px-1.5 py-px text-[10px]' : 'px-2 py-0.5 text-xs',
       config.bg, config.color, className
     )}>
       {config.label}

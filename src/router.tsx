@@ -13,6 +13,7 @@ import { AlertsPage } from '@/pages/AlertsPage'
 import { TasksPage } from '@/pages/TasksPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { ChannelComparisonPage } from '@/pages/ChannelComparisonPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: '/clients/:id', element: <ClientDetailPage /> },
       { path: '/campaigns', element: <CampaignsPage /> },
       { path: '/campaigns/:id', element: <CampaignDetailPage /> },
+      { path: '/channels', element: <ChannelComparisonPage /> },
       { path: '/integrations', element: <IntegrationsPage /> },
       { path: '/alerts', element: <AlertsPage /> },
       { path: '/tasks', element: <TasksPage /> },

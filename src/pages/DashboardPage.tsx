@@ -1,144 +1,125 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { DollarSign, MousePointerClick, Eye, TrendingUp, Bell, CheckSquare, Users, Megaphone } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Header } from '@/components/layout/Header'
 import { MetricCard } from '@/components/shared/MetricCard'
+import { PerformanceTrendChart } from '@/components/shared/PerformanceTrendChart'
+import { TopCampaignsWidget } from '@/components/shared/TopCampaignsWidget'
+import { CampaignsAttentionWidget } from '@/components/shared/CampaignsAttentionWidget'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useDashboardMetrics, usePerformanceTrend, useSpendByPlatform } from '@/hooks/useDashboard'
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/metrics/normalize'
+import {
+  useDashboardSummary,
+  useOrgDailyTotals,
+  usePlatformSpend,
+  useCampaignSummaries,
+  useAttentionCampaigns,
+} from '@/hooks/useMetrics'
+import { fmtCurrency, fmtNumber, fmtPercent, fmtROAS, platformLabel } from '@/lib/metrics/format'
+import { calcDelta } from '@/lib/metrics/calculate'
 
 const PLATFORM_COLORS: Record<string, string> = {
-  google_ads: '#4285F4',
-  meta_ads: '#1877F2',
+  google_ads:   '#4285F4',
+  meta_ads:     '#1877F2',
   linkedin_ads: '#0A66C2',
-  ga4: '#E37400',
-}
-
-const PLATFORM_LABELS: Record<string, string> = {
-  google_ads: 'Google Ads',
-  meta_ads: 'Meta Ads',
-  linkedin_ads: 'LinkedIn',
-  ga4: 'GA4',
+  ga4:          '#E37400',
 }
 
 export function DashboardPage() {
-  const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics()
-  const { data: trend = [] } = usePerformanceTrend(30)
-  const { data: platformSpend = [] } = useSpendByPlatform()
+  const [trendDays, setTrendDays] = useState(30)
+
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary()
+  const { data: trend = [], isLoading: trendLoading } = useOrgDailyTotals(trendDays)
+  const { data: platformSpend = [] } = usePlatformSpend(30)
+  const { data: campaigns = [], isLoading: campaignsLoading } = useCampaignSummaries()
+  const { data: attentionCampaigns = [], isLoading: attentionLoading } = useAttentionCampaigns()
+
+  const mtd  = summary?.mtd
+  const prev = summary?.prevMtd
+
+  const spendDelta = mtd && prev ? calcDelta(mtd.spend, prev.spend, 'spend') : null
+  const convDelta  = mtd && prev ? calcDelta(mtd.conversions, prev.conversions, 'conversions') : null
+  const clickDelta = mtd && prev ? calcDelta(mtd.clicks, prev.clicks, 'clicks') : null
 
   return (
     <div>
       <Header title="Dashboard" subtitle="Overview of all active campaigns and performance" />
 
       <div className="p-8 space-y-8">
-        {/* KPI Cards */}
+        {/* KPI Cards — row 1 */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Clients"
-            value={metricsLoading ? '—' : String(metrics?.total_clients ?? 0)}
+            value={summaryLoading ? '—' : String(summary?.totalClients ?? 0)}
             icon={<Users className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
           <MetricCard
             title="Active Campaigns"
-            value={metricsLoading ? '—' : String(metrics?.active_campaigns ?? 0)}
+            value={summaryLoading ? '—' : String(summary?.activeCampaigns ?? 0)}
             icon={<Megaphone className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
           <MetricCard
             title="Spend MTD"
-            value={metricsLoading ? '—' : formatCurrency(metrics?.total_spend_mtd ?? 0)}
-            change={metrics?.spend_change_pct}
+            value={summaryLoading ? '—' : fmtCurrency(mtd?.spend ?? 0)}
+            change={spendDelta?.relative ?? undefined}
             icon={<DollarSign className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
           <MetricCard
             title="Conversions MTD"
-            value={metricsLoading ? '—' : formatNumber(metrics?.total_conversions_mtd ?? 0)}
-            change={metrics?.conversions_change_pct}
+            value={summaryLoading ? '—' : fmtNumber(mtd?.conversions ?? 0)}
+            change={convDelta?.relative ?? undefined}
             icon={<TrendingUp className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
         </div>
 
+        {/* KPI Cards — row 2 */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Impressions MTD"
-            value={metricsLoading ? '—' : formatNumber(metrics?.total_impressions_mtd ?? 0)}
+            value={summaryLoading ? '—' : fmtNumber(mtd?.impressions ?? 0)}
             icon={<Eye className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
           <MetricCard
             title="Clicks MTD"
-            value={metricsLoading ? '—' : formatNumber(metrics?.total_clicks_mtd ?? 0)}
-            change={metrics?.clicks_change_pct}
+            value={summaryLoading ? '—' : fmtNumber(mtd?.clicks ?? 0)}
+            change={clickDelta?.relative ?? undefined}
             icon={<MousePointerClick className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
           <MetricCard
             title="Open Alerts"
-            value={metricsLoading ? '—' : String(metrics?.open_alerts ?? 0)}
+            value={summaryLoading ? '—' : String(summary?.openAlerts ?? 0)}
             icon={<Bell className="w-5 h-5" />}
-            description={metrics?.open_alerts ? `${metrics.open_alerts} need attention` : undefined}
-            loading={metricsLoading}
+            description={summary?.openAlerts ? `${summary.openAlerts} need attention` : undefined}
+            loading={summaryLoading}
           />
           <MetricCard
             title="Pending Tasks"
-            value={metricsLoading ? '—' : String(metrics?.pending_tasks ?? 0)}
+            value={summaryLoading ? '—' : String(summary?.pendingTasks ?? 0)}
             icon={<CheckSquare className="w-5 h-5" />}
-            loading={metricsLoading}
+            loading={summaryLoading}
           />
         </div>
 
-        {/* Charts row */}
+        {/* Performance trend + platform spend */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Performance trend */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Performance Trend (Last 30 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {trend.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-sm text-slate-400">
-                  No performance data yet. Connect a platform to start syncing.
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={trend} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                    <defs>
-                      <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="clicksGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false}
-                      tickFormatter={d => d.slice(5)} />
-                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false}
-                      tickFormatter={v => `$${formatNumber(v)}`} />
-                    <Tooltip
-                      formatter={(value: number, name: string) => [
-                        name === 'spend' ? formatCurrency(value) : formatNumber(value),
-                        name === 'spend' ? 'Spend' : name.charAt(0).toUpperCase() + name.slice(1)
-                      ]}
-                      labelStyle={{ fontSize: 12, color: '#475569' }}
-                      contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12 }}
-                    />
-                    <Area type="monotone" dataKey="spend" stroke="#3b82f6" strokeWidth={2} fill="url(#spendGrad)" dot={false} />
-                    <Area type="monotone" dataKey="clicks" stroke="#10b981" strokeWidth={2} fill="url(#clicksGrad)" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-2">
+            <PerformanceTrendChart
+              data={trend}
+              loading={trendLoading}
+              days={trendDays}
+              onDaysChange={setTrendDays}
+            />
+          </div>
 
-          {/* Spend by platform */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Spend by Platform</CardTitle>
+              <CardTitle className="text-base">Spend by Platform (30d)</CardTitle>
             </CardHeader>
             <CardContent>
               {platformSpend.length === 0 ? (
@@ -150,12 +131,12 @@ export function DashboardPage() {
                   <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie data={platformSpend} dataKey="spend" nameKey="platform" cx="50%" cy="50%" outerRadius={60} strokeWidth={2}>
-                        {platformSpend.map((entry) => (
+                        {platformSpend.map(entry => (
                           <Cell key={entry.platform} fill={PLATFORM_COLORS[entry.platform] ?? '#94a3b8'} />
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(v: number) => formatCurrency(v)}
+                        formatter={(v: number) => fmtCurrency(v)}
                         contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12 }}
                       />
                     </PieChart>
@@ -165,11 +146,11 @@ export function DashboardPage() {
                       <div key={item.platform} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PLATFORM_COLORS[item.platform] ?? '#94a3b8' }} />
-                          <span className="text-slate-600">{PLATFORM_LABELS[item.platform] ?? item.platform}</span>
+                          <span className="text-slate-600">{platformLabel(item.platform)}</span>
                         </div>
                         <div className="text-right">
-                          <span className="font-medium text-slate-900">{formatCurrency(item.spend)}</span>
-                          <span className="text-slate-400 ml-1.5">{formatPercent(item.percentage, 1)}</span>
+                          <span className="font-medium text-slate-900 tabular-nums">{fmtCurrency(item.spend)}</span>
+                          <span className="text-slate-400 ml-1.5 text-xs">{fmtPercent(item.percentage, 1)}</span>
                         </div>
                       </div>
                     ))}
@@ -180,21 +161,21 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        {/* Performance summary */}
-        {metrics && (
+        {/* MTD summary bar */}
+        {mtd && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Month-to-Date Summary</CardTitle>
+              <CardTitle className="text-base">Month-to-Date Performance</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-6 text-center">
                 {[
-                  { label: 'Avg. CTR', value: formatPercent(metrics.avg_ctr) },
-                  { label: 'Avg. CPC', value: formatCurrency(metrics.avg_cpc) },
-                  { label: 'Total Spend', value: formatCurrency(metrics.total_spend_mtd) },
-                  { label: 'Clicks', value: formatNumber(metrics.total_clicks_mtd) },
-                  { label: 'Impressions', value: formatNumber(metrics.total_impressions_mtd) },
-                  { label: 'Conversions', value: formatNumber(metrics.total_conversions_mtd) },
+                  { label: 'Avg. CTR',     value: fmtPercent(mtd.ctr, 2) },
+                  { label: 'Avg. CPC',     value: fmtCurrency(mtd.cpc) },
+                  { label: 'Total Spend',  value: fmtCurrency(mtd.spend) },
+                  { label: 'Clicks',       value: fmtNumber(mtd.clicks) },
+                  { label: 'Impressions',  value: fmtNumber(mtd.impressions) },
+                  { label: 'ROAS',         value: fmtROAS(mtd.roas) },
                 ].map(stat => (
                   <div key={stat.label}>
                     <div className="text-lg font-bold text-slate-900 tabular-nums">{stat.value}</div>
@@ -205,6 +186,23 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Widgets row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <TopCampaignsWidget campaigns={campaigns} loading={campaignsLoading} topN={8} />
+          </div>
+          <CampaignsAttentionWidget campaigns={attentionCampaigns} loading={attentionLoading} />
+        </div>
+
+        {/* Quick links */}
+        <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
+          <span className="text-xs text-slate-400">Quick links:</span>
+          <Link to="/campaigns" className="text-xs text-blue-600 hover:underline">All Campaigns</Link>
+          <Link to="/clients" className="text-xs text-blue-600 hover:underline">All Clients</Link>
+          <Link to="/channels" className="text-xs text-blue-600 hover:underline">Channel Comparison</Link>
+          <Link to="/alerts" className="text-xs text-blue-600 hover:underline">Alerts</Link>
+        </div>
       </div>
     </div>
   )
