@@ -6,7 +6,6 @@ import { Loader2, Shield, Bell, CreditCard, Users, Key, User } from 'lucide-reac
 import { useAuth } from '@/contexts/AuthContext'
 import { useOrg } from '@/contexts/OrgContext'
 import { updateUserProfile } from '@/lib/supabase/auth'
-import { TopBar } from '@/components/layout/TopBar'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -335,13 +334,12 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <TopBar />
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-8 pt-6 pb-2">
-          <h1 className="text-xl font-semibold text-slate-900">Settings</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage your account and organization preferences</p>
-        </div>
+    <div>
+      <div className="px-8 pt-6 pb-2 border-b border-slate-100">
+        <h1 className="text-xl font-semibold text-slate-900">Settings</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Manage your account and organization preferences</p>
+      </div>
+      <div className="overflow-y-auto">
 
         <div className="flex gap-8 px-8 pt-6 pb-8">
           {/* Tab list */}

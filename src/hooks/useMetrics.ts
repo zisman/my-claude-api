@@ -13,9 +13,10 @@ import { useAuth } from './useAuth'
 
 export function useDashboardSummary() {
   const { user } = useAuth()
+  const orgId = user?.organization_id ?? ''
   return useQuery({
-    queryKey: ['dashboard-summary', user?.organization_id],
-    queryFn: () => getDashboardSummary(user!.organization_id),
+    queryKey: ['dashboard-summary', orgId],
+    queryFn: () => getDashboardSummary(orgId),
     enabled: !!user?.organization_id,
     staleTime: 30_000,
     refetchInterval: 60_000,
@@ -24,9 +25,10 @@ export function useDashboardSummary() {
 
 export function useOrgDailyTotals(days = 30) {
   const { user } = useAuth()
+  const orgId = user?.organization_id ?? ''
   return useQuery({
-    queryKey: ['org-daily-totals', user?.organization_id, days],
-    queryFn: () => getOrgDailyTotals(user!.organization_id, days),
+    queryKey: ['org-daily-totals', orgId, days],
+    queryFn: () => getOrgDailyTotals(orgId, days),
     enabled: !!user?.organization_id,
     staleTime: 60_000,
   })
@@ -34,9 +36,10 @@ export function useOrgDailyTotals(days = 30) {
 
 export function usePlatformSpend(days = 30) {
   const { user } = useAuth()
+  const orgId = user?.organization_id ?? ''
   return useQuery({
-    queryKey: ['platform-spend', user?.organization_id, days],
-    queryFn: () => getPlatformSpend(user!.organization_id, days),
+    queryKey: ['platform-spend', orgId, days],
+    queryFn: () => getPlatformSpend(orgId, days),
     enabled: !!user?.organization_id,
     staleTime: 60_000,
   })
@@ -44,9 +47,10 @@ export function usePlatformSpend(days = 30) {
 
 export function useClientOverviews() {
   const { user } = useAuth()
+  const orgId = user?.organization_id ?? ''
   return useQuery({
-    queryKey: ['client-overviews', user?.organization_id],
-    queryFn: () => getClientOverviews(user!.organization_id),
+    queryKey: ['client-overviews', orgId],
+    queryFn: () => getClientOverviews(orgId),
     enabled: !!user?.organization_id,
     staleTime: 60_000,
   })
@@ -59,9 +63,10 @@ export function useCampaignSummaries(opts: {
   search?: string
 } = {}) {
   const { user } = useAuth()
+  const orgId = user?.organization_id ?? ''
   return useQuery({
-    queryKey: ['campaign-summaries', user?.organization_id, opts],
-    queryFn: () => getCampaignSummaries({ organizationId: user!.organization_id, ...opts }),
+    queryKey: ['campaign-summaries', orgId, opts],
+    queryFn: () => getCampaignSummaries({ organizationId: orgId, ...opts }),
     enabled: !!user?.organization_id,
     staleTime: 60_000,
   })
@@ -87,9 +92,10 @@ export function useCampaignMetrics(campaignId: string, days = 30) {
 
 export function useAttentionCampaigns() {
   const { user } = useAuth()
+  const orgId = user?.organization_id ?? ''
   return useQuery({
-    queryKey: ['attention-campaigns', user?.organization_id],
-    queryFn: () => getCampaignsRequiringAttention(user!.organization_id),
+    queryKey: ['attention-campaigns', orgId],
+    queryFn: () => getCampaignsRequiringAttention(orgId),
     enabled: !!user?.organization_id,
     staleTime: 60_000,
   })
