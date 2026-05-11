@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ClientsPage } from '@/pages/ClientsPage'
@@ -11,12 +12,15 @@ import { AlertsPage } from '@/pages/AlertsPage'
 import { TasksPage } from '@/pages/TasksPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
-import { RequireAuth } from '@/components/layout/RequireAuth'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
-    element: <RequireAuth><AppLayout /></RequireAuth>,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { path: '/', element: <DashboardPage /> },
       { path: '/clients', element: <ClientsPage /> },
